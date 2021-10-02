@@ -17,8 +17,9 @@ public class ClassDeclrationVisitor extends ASTVisitor {
 	public boolean visit(TypeDeclaration node) {
 		nbrClass ++ ;
 		classes.add(node);
-		//System.out.println("Class name: " + node.getName());
-		return false;
+		
+		return super.visit(node);
+
 	}
 	
 	public List<TypeDeclaration> getClasses() {

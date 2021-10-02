@@ -10,10 +10,10 @@ public class PackageFragmentVisitor extends ASTVisitor {
 	
 	
 	List <PackageDeclaration> packages  = new ArrayList<PackageDeclaration>() ; 
-	
+	public  static int  nbrpackage= 0 ;
 	@Override
 	public boolean visit(PackageDeclaration node) {
-		
+		nbrpackage ++ ;
 		packages.add(node);
 		return super.visit(node);
 		
