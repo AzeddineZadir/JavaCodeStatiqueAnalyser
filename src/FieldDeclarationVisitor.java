@@ -8,11 +8,9 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 public class FieldDeclarationVisitor extends ASTVisitor{
 
 	 List <FieldDeclaration> attributes = new ArrayList<FieldDeclaration>();
-	 public  static int  nbrAttributes= 0 ;
 	 
 		public boolean visit (FieldDeclaration node) {
 //			System.out.println(node.toString());
-			nbrAttributes ++ ;
 			attributes.add(node);
 			return super.visit(node);
 		}

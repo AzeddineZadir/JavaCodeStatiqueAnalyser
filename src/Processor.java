@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.core.internal.utils.FileUtil;
@@ -16,12 +17,15 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import java.util.Arrays;
+import java.util.HashMap;
+
 import com.sun.jdi.Type;
 
 import models.MyApplication;
@@ -35,25 +39,36 @@ public class Processor {
 	static int nbr_attributes = 0;
 	static int nbr_code_lines = 0;
 	static int nbr_methodes_lines = 0;
-
+	static List<String> classes = new ArrayList<>();
 	static List<CompilationUnit> parsedNodes = new ArrayList<>();
 	static List<MyMethode> methodesNodes = new ArrayList<>();
 	static MyApplication analysedApplication = new MyApplication();
-
+	static HashMap<String,Integer> wrapMethodClass = new HashMap<String, Integer>(); 
+	static HashMap<String,Integer> wrapFieldClass = new HashMap<String, Integer>(); 
+	static List<String> bestMethodsClass = new ArrayList<String>();
+	static List<String> bestAttributsClass = new ArrayList<String>();
+	static HashMap<String,HashMap<String,Integer>> wrapMethodLineByClass = new HashMap<String,HashMap<String,Integer>>();
+	static HashMap<String,Integer> wrapMethodParamsCount  = new HashMap<String, Integer>();
+	static List<String> methods = new ArrayList<String>();
+	static int maxParams = 0;
+	static String biggerParamsMethode = "";
 	public static void main(String[] args) throws IOException {
-
-		String projectPath = "C:\\\\Users\\\\fds.depinfo\\\\eclipse-workspace\\\\TP01_ERL";
+		
+		String projectPath = "C:\\\\Users\\\\pc\\\\Downloads\\\\ERL_TP1_Partie1";
 		parsedNodes = Parser.parseProject(projectPath);
-
+		
 		for (CompilationUnit compilationUnit : parsedNodes) {
-
+			
+			wrapClassName(compilationUnit);
 			nbr_classes = countClassNumber(compilationUnit);
 			nbr_methodes = countMethodeDeclarations(compilationUnit);
 			nbr_packge = countPackagesNumber(compilationUnit);
 			nbr_attributes = countAttributes(compilationUnit);
 			countLineNumber(compilationUnit);
 			nbr_methodes_lines = countMethodeLineNumber(compilationUnit);
-
+			wrapMethodInvocationInfo(compilationUnit);
+			wrapFieldDeclaration(compilationUnit);
+			
 		}
 
 		System.out.println("1**** nbr totale classes " + nbr_classes);
@@ -63,7 +78,71 @@ public class Processor {
 		System.out.println("5**** nbr moyen de methodes par class  " + nbr_methodes / nbr_classes);
 		System.out.println("6**** nbr moyen de lingnes par méthode  " + nbr_methodes_lines / nbr_classes);
 		System.out.println("7**** nbr moyen d'attributs par class  " + nbr_attributes);
-		printMethodes();
+		System.out.println("8**** Les 10% des classes qui possèdent	le	plus grand nombre de méthodes. ");
+		List methodEntries = wrapMethodClass.entrySet()
+					   .stream()
+					   .sorted(Map.Entry.comparingByValue())
+					   .collect(Collectors.toList()) ;
+		
+		int dixPourCentClassMethods = (int) Math.ceil(nbr_classes*0.1); 
+		for(int i=0;i<dixPourCentClassMethods;i++) {
+			String className = methodEntries.get(methodEntries.size()-1-i).toString().split("=")[0];
+			String number = methodEntries.get(methodEntries.size()-1-i).toString().split("=")[1];
+			bestMethodsClass.add(className);
+			System.out.println("Top "+(++i)+" - Class "+className + " possède "+ number+" Méthode(s)");
+		}
+		
+		System.out.println("9**** Les 10% des classes qui possèdent	le	plus grand nombre d'attributs. ");
+		List fieldEntries = wrapFieldClass.entrySet()
+				   .stream()
+				   .sorted(Map.Entry.comparingByValue())
+				   .collect(Collectors.toList()) ;
+	
+		int dixPourCentClassFields = (int) Math.ceil(nbr_classes*0.1); 
+		for(int i=0;i<dixPourCentClassFields;i++) {
+			String className = fieldEntries.get(fieldEntries.size()-1-i).toString().split("=")[0];
+			String number = fieldEntries.get(fieldEntries.size()-1-i).toString().split("=")[1];
+			bestAttributsClass.add(className);
+			System.out.println("Top "+(++i)+" - Class "+className + " possède "+ number+" Attribut(s)");
+			
+		}
+		
+		System.out.println("10*** Les classes qui font partie en même temps des deux catégories précédentes.");
+		bestAttributsClass.forEach(c1->{
+			bestMethodsClass.forEach(c2->{
+				if(c1.equals(c2)) System.out.println(c1);
+			});
+		});
+		System.out.println("11*** Les classes qui possèdent plus de X méthodes (la valeur de X est donnée).");
+		classMethodX(2);
+		System.out.println("12*** Les 10% des méthodes qui possèdent le plus grand nombre de lignes de code (par classe). ");
+		classes.forEach(classe ->{
+			System.out.println("Classe "+classe);
+			List MethodeLineEntries = wrapMethodLineByClass.get(classe).entrySet()
+					   .stream()
+					   .sorted(Map.Entry.comparingByValue())
+					   .collect(Collectors.toList()) ;
+		
+			int dixPourCentMethodLine = (int) Math.ceil(wrapMethodClass.get(classe)*0.1); 
+			for(int i=0;i<dixPourCentMethodLine;i++) {
+				String methode = MethodeLineEntries.get(MethodeLineEntries.size()-1-i).toString().split("=")[0];
+				String number = MethodeLineEntries.get(MethodeLineEntries.size()-1-i).toString().split("=")[1];
+				System.out.println("Top "+(++i)+" - Methode "+methode + " possède "+ number+" Ligne(s)");
+				
+			}
+		});
+		
+		System.out.println("13*** Le nombre maximal de paramètres par rapport à toutes les méthodes de l’application.");
+		
+		methods.forEach(m-> {
+			if(maxParams <= wrapMethodParamsCount.get(m)) {
+				maxParams=wrapMethodParamsCount.get(m);
+				biggerParamsMethode=m.toString();
+			}
+			
+		});
+		System.out.println(biggerParamsMethode +" possède "+maxParams+" ");
+		
 	}
 
 	// return class number
@@ -115,10 +194,62 @@ public class Processor {
 		FieldDeclarationVisitor visitor = new FieldDeclarationVisitor();
 		parse.accept(visitor);
 		// System.out.println(visitor.getAttributes());
-		return visitor.nbrAttributes;
+		return visitor.getAttributes().size();
 
 	}
-
+	
+	public static void classMethodX(int x) {
+		classes.forEach(classe -> {
+			if(wrapMethodClass.get(classe)>=x) {
+				System.out.println(classe);
+			}
+		});
+	
+	}
+	
+	public static void wrapMethodInvocationInfo(CompilationUnit parse) {
+		String className = "";
+		HashMap<String, Integer> wrapMethodLine = new HashMap<String, Integer>();
+		int i=0;
+		List types = parse.types();
+		TypeDeclaration typeDec = (TypeDeclaration) types.get(0); 
+		className=typeDec.getName().toString();
+		MethodDeclarationVisitor visitor1 = new MethodDeclarationVisitor();
+		parse.accept(visitor1);
+		for (MethodDeclaration method : visitor1.getMethods()) {
+			methods.add(method.resolveBinding().getMethodDeclaration().toString().replace(" ","_"));
+			wrapMethodParamsCount.put(method.resolveBinding().getMethodDeclaration().toString().replace(" ","_"),method.parameters().size());
+			wrapMethodLine.put(method.resolveBinding().getMethodDeclaration().toString().replace(" ","_"), method.toString().split("\n").length);
+			i++;
+		} 
+		wrapMethodClass.put(className, i);
+		wrapMethodLineByClass.put(className, wrapMethodLine);
+	
+	}
+	public static void wrapClassName(CompilationUnit parse) {
+		String className = "";
+		int i=0;
+		List types = parse.types();
+		TypeDeclaration typeDec = (TypeDeclaration) types.get(0); 
+		className=typeDec.getName().toString();
+		classes.add(className);
+		
+	}
+	public static void wrapFieldDeclaration(CompilationUnit parse) {
+		String className = "";
+		int i=0;
+		List types = parse.types();
+		TypeDeclaration typeDec = (TypeDeclaration) types.get(0); 
+		className=typeDec.getName().toString();
+		FieldDeclarationVisitor visitor1 = new FieldDeclarationVisitor();
+		parse.accept(visitor1);
+		for ( FieldDeclaration field : visitor1.getAttributes()) {
+			i++;
+		}
+		wrapFieldClass.put(className, i);
+		
+	
+	}
 	public static int countLineNumber(CompilationUnit parse) {
 
 		List<String> temp = Arrays.asList(parse.toString().split("\n"));

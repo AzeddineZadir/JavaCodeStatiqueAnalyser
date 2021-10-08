@@ -25,7 +25,7 @@ import com.sun.jdi.Type;
 
 public class Parser {
 
-	public static final String projectPath = "C:\\Users\\fds.depinfo\\eclipse-workspace\\TP01_ERL";
+	public static final String projectPath = "C:\\Users\\pc\\Downloads\\ERL_TP1_Partie1";
 	public static final String projectSourcePath = projectPath + "\\src";
 	public static final String jrePath = "C:\\Program Files\\Java\\jre1.8.0_301\\lib\\rt.jar";
 	static int nbr_classes = 0 ; 
@@ -46,6 +46,7 @@ public class Parser {
 			CompilationUnit parse = parse(content.toCharArray());
 
 			countMethodeDeclarations(parse);
+			
 			System.out.println(nbr_methodes);
 			
 		}
@@ -140,7 +141,7 @@ public class Parser {
 	
 	}
 	
-	
+
 	public static List <CompilationUnit> parseProject (String projectpath) throws IOException {
 		
 		List <CompilationUnit> listParseres = new ArrayList<CompilationUnit>() ;
