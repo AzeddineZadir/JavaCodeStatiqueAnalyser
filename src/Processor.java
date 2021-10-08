@@ -25,6 +25,7 @@ import java.util.Arrays;
 import com.sun.jdi.Type;
 
 import models.MyApplication;
+import models.MyMethode;
 
 public class Processor {
 
@@ -32,9 +33,11 @@ public class Processor {
 	static int nbr_methodes = 0;
 	static int nbr_packge = 0;
 	static int nbr_attributes = 0;
+	static int nbr_code_lines = 0;
+	static int nbr_methodes_lines = 0;
 
 	static List<CompilationUnit> parsedNodes = new ArrayList<>();
-
+	static List<MyMethode> methodesNodes = new ArrayList<>();
 	static MyApplication analysedApplication = new MyApplication();
 
 	public static void main(String[] args) throws IOException {
@@ -48,14 +51,19 @@ public class Processor {
 			nbr_methodes = countMethodeDeclarations(compilationUnit);
 			nbr_packge = countPackagesNumber(compilationUnit);
 			nbr_attributes = countAttributes(compilationUnit);
+			countLineNumber(compilationUnit);
+			nbr_methodes_lines = countMethodeLineNumber(compilationUnit);
+
 		}
 
 		System.out.println("1**** nbr totale classes " + nbr_classes);
+		System.out.println("2**** nbr de linges du code  " + nbr_code_lines);
 		System.out.println("3**** nbr totale de methodes  " + nbr_methodes);
 		System.out.println("4**** nbr totale de package  " + nbr_packge);
 		System.out.println("5**** nbr moyen de methodes par class  " + nbr_methodes / nbr_classes);
-		System.out.println("7**** nbr moyen d'attributs par class  " +  nbr_attributes/nbr_classes);
-
+		System.out.println("6**** nbr moyen de lingnes par méthode  " + nbr_methodes_lines / nbr_classes);
+		System.out.println("7**** nbr moyen d'attributs par class  " + nbr_attributes);
+		printMethodes();
 	}
 
 	// return class number
@@ -75,6 +83,24 @@ public class Processor {
 		return visitor.nbrMethode;
 	}
 
+	// return the number of lines of methodes
+	public static int countMethodeLineNumber(CompilationUnit parse) {
+		MethodeLinesVisitor visitor = new MethodeLinesVisitor();
+
+		parse.accept(visitor);
+
+		return visitor.nbrLineMethode;
+	}
+
+	public static List<MyMethode> getMethodeAsObject(CompilationUnit parse) {
+		MethodeDeclarationVisitor visitor = new MethodeDeclarationVisitor();
+
+		parse.accept(visitor);
+		methodesNodes.addAll(visitor.getMyMethodes());
+
+		return methodesNodes;
+	}
+
 	public static int countPackagesNumber(CompilationUnit parse) {
 
 		PackageFragmentVisitor visitor = new PackageFragmentVisitor();
@@ -83,13 +109,30 @@ public class Processor {
 		return visitor.nbrpackage;
 
 	}
-	
+
 	public static int countAttributes(CompilationUnit parse) {
 
 		FieldDeclarationVisitor visitor = new FieldDeclarationVisitor();
 		parse.accept(visitor);
-		System.out.println(visitor.getAttributes());
+		// System.out.println(visitor.getAttributes());
 		return visitor.nbrAttributes;
 
 	}
+
+	public static int countLineNumber(CompilationUnit parse) {
+
+		List<String> temp = Arrays.asList(parse.toString().split("\n"));
+		nbr_code_lines += temp.size();
+
+		return 0;
+	}
+
+	public static void printMethodes() {
+		for (MyMethode myMethode : methodesNodes) {
+			System.out.println("methdoe name : " + myMethode.getMethodeName() + "parent classe : "
+					+ myMethode.getParentClass() + " nbr de linge : " + myMethode.getNbrLinge());
+
+		}
+	}
+
 }
