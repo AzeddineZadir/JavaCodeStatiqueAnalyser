@@ -28,29 +28,9 @@ public class Parser {
 	public static final String projectPath = "C:\\Users\\pc\\Downloads\\ERL_TP1_Partie1";
 	public static final String projectSourcePath = projectPath + "\\src";
 	public static final String jrePath = "C:\\Program Files\\Java\\jre1.8.0_301\\lib\\rt.jar";
-	static int nbr_classes = 0 ; 
-	static int nbr_methodes =0 ;
-	static int nbr_packages =0 ;
-	public static void main(String[] args) throws IOException {
-
-		// read java files
-		final File folder = new File(projectSourcePath);
-		ArrayList<File> javaFiles = listJavaFilesForFolder(folder);
-
-		//
-		ArrayList<String> lines = new ArrayList<>();
-		for (File fileEntry : javaFiles) {
-			
-			String content = FileUtils.readFileToString(fileEntry);
-
-			CompilationUnit parse = parse(content.toCharArray());
-
-			countMethodeDeclarations(parse);
-			
-			System.out.println(nbr_methodes);
-			
-		}
-	}
+	static int nbr_classes = 0;
+	static int nbr_methodes = 0;
+	static int nbr_packages = 0;
 
 	// read all java files from specific folder
 	public static ArrayList<File> listJavaFilesForFolder(final File folder) {
@@ -89,80 +69,26 @@ public class Parser {
 		return (CompilationUnit) parser.createAST(null); // create and parse
 	}
 
-	// return  classes names
-	public static void printClassName(CompilationUnit parse) {
+	public static List<CompilationUnit> parseProject(String projectpath) throws IOException {
 
-		ClassDeclrationVisitor visitor = new ClassDeclrationVisitor();
-		parse.accept(visitor);
-
-	}
-	
-	// return class number
-	public static void countClassNumber(CompilationUnit parse) {
-
-		ClassDeclrationVisitor visitor = new ClassDeclrationVisitor();
-		parse.accept(visitor);
-	
-		for (TypeDeclaration visitedClass : visitor.getClasses()) {	
-			
-			
-			nbr_classes++;
-		}
-		
-		
-	}
-	
-	// return nber methodes 
-	public static void countMethodeDeclarations(CompilationUnit parse) {
-		MethodeDeclarationVisitor visitor = new MethodeDeclarationVisitor() ;
-		
-		parse.accept(visitor);
-		
-		for (MethodDeclaration methode : visitor.getMethodes()) {
-			System.out.println(methode.getName());
-			nbr_methodes ++ ;
-		}
-		
-		
-	}
-	
-	
-	public static void countPackagesNumber(CompilationUnit parse) {
-		
-		PackageFragmentVisitor visitor = new PackageFragmentVisitor() ; 
-		parse.accept(visitor);
-		
-		System.out.println(visitor.getPackages());
-		for (PackageDeclaration myPackage : visitor.getPackages()) {
-			System.out.println(myPackage.getName());
-			nbr_packages ++ ; 
-		}
-	
-	
-	}
-	
-
-	public static List <CompilationUnit> parseProject (String projectpath) throws IOException {
-		
-		List <CompilationUnit> listParseres = new ArrayList<CompilationUnit>() ;
+		List<CompilationUnit> listParseres = new ArrayList<CompilationUnit>();
 		// read java files
-				final File folder = new File(projectpath);
-				ArrayList<File> javaFiles = listJavaFilesForFolder(folder);
+		final File folder = new File(projectpath);
+		ArrayList<File> javaFiles = listJavaFilesForFolder(folder);
 
-				//
-				ArrayList<String> lines = new ArrayList<>();
-				for (File fileEntry : javaFiles) {
-					
-					String content = FileUtils.readFileToString(fileEntry);
+		//
+		ArrayList<String> lines = new ArrayList<>();
+		for (File fileEntry : javaFiles) {
 
-					CompilationUnit parse = parse(content.toCharArray());
-					listParseres.add(parse);
-										
-				}
-		
-		return listParseres; 
-		
-		
+			String content = FileUtils.readFileToString(fileEntry);
+
+			CompilationUnit parse = parse(content.toCharArray());
+			listParseres.add(parse);
+
+		}
+
+		return listParseres;
+
 	}
-	
+
 }
